@@ -8,6 +8,8 @@ pos_estado = None
 pos_estado_atual = None
 ######################
 
+################### PRINT FUNCTIONS #######################
+
 #Print the first sets
 def imprime_first():
 	global Estados
@@ -33,6 +35,10 @@ def imprime_follow():
 			print(estado.follow[i], end="")
 		print("}")
 
+##############################################################
+
+
+##################### UTIL FUNCTIONS #########################
 
 #Splits a string between '<' and '>' characters to obtain the NonTerminal Symbol
 def splitNT(line):
@@ -60,6 +66,10 @@ def search_pos_estado(estado):
 		if Estados[i].nome == estado:
 			return i
 
+#################################################################
+
+
+############### FUNCTIONS TO FIND FIRST SET #####################
 
 #Retorna True se terminou de ler a produção e Falso se precisa continuar lendo
 def read_production_first(line):
@@ -67,9 +77,7 @@ def read_production_first(line):
 	if line[i_line] != '<' and line[i_line] != '>':
 		#If production's first symbol is Terminal,
 		#verifies if it already exists in state's first set.
-		if line[i_line] == 'ε':
-			Estados[pos_estado_atual].tem_epsilon = True
-		if line[i_line] != 'ε' and line[i_line] not in Estados[pos_estado_atual].first:
+		if line[i_line] not in Estados[pos_estado_atual].first:
 			Estados[pos_estado_atual].first.append(line[i_line])
 			has_changed = True
 		i_line += 1
@@ -81,7 +89,7 @@ def read_production_first(line):
 		if exists_estado(estado) and estado != Estados[pos_estado_atual].nome:
 			pos_estado = search_pos_estado(estado)
 			for i in Estados[pos_estado].first:
-				if i not in Estados[pos_estado_atual].first:
+				if i not in Estados[pos_estado_atual].first and i != 'ε':
 					Estados[pos_estado_atual].first.append(i)
 					has_changed = True
 			if not Estados[pos_estado].tem_epsilon:
@@ -114,7 +122,8 @@ def read_line_first(line):
 		while line[i_line] != ' ' and line[i_line] != '\n':
 			if read_production_first(line) == True:
 				break
-
+			# if line[i_line] == ' ' or line[i_line] == '\n':
+			# 	Estados[pos_estado_atual].first.append('ε')
 		while line[i_line] != '|':
 			if line[i_line] == '\n': return #Current line is over, end function
 			i_line += 1
@@ -123,7 +132,7 @@ def read_line_first(line):
 			i_line += 1
 
 
-#Everytime flagg is set, it means some first set has changed in last iteration;
+#Everytime has_changed is set, it means some first set has changed in last iteration;
 #so, the function reopen the file and iterate over it again.
 def resolve_first():
 	global i_line, Estados, has_changed
@@ -134,14 +143,73 @@ def resolve_first():
 			read_line_first(line)
 
 
+################# FUNCTIONS TO FIND FOLLOW SETS ######################
+
+#Receives a line and two indexes a & b.
+#Returns the FIRST set of the interval [a,b]
+def first_substring(line, a, b):
+	FIRST = {}
+
+
+
+#Receives a line from the external file and executes the verification of
+#the Follow Set Algorithm.
+def read_line_follow(line):
+	global i_line, Estados, has_changed
+	i_line = 1
+	estado = splitNT(line)
+
+	while (line[i_line] == ' ' or line[i_line] == '>' or line[i_line] == ':'
+			or line[i_line] == '='):
+		i_line += 1
+
+
+
+
+
+#Everytime has_changed is set, it means some follow set has changed in last iteration;
+#so, the function reopen the file and iterate over it again.
+def resolve_follow():
+	global i_line, Estados, has_changed
+	#open file in read mode
+	has_changed = False;
+	with open("GLC.txt", "r") as File:
+		for line in File:
+			read_line_follow(line)
+
+
+#Put the "Dollar Sign" ($) in the initial state's follow set.
+def put_dollar_sign():
+	global Estados
+	for e in Estados:
+		if e.nome == 'S':
+			e.follow.append('$')
+			return
+
+######################################################################
+
 #Main Function
 def main():
 	global Estados, has_changed
+
+	##### FIRST ######
 	has_changed = True
 	while has_changed:
 		resolve_first()
+	##################
 
+	##### FOLLOW #####
+	has_changed = True
+	put_dollar_sign()
+	while has_changed:
+		resolve_follow()
+	##################
+
+	##### PRINT RESULTS #####
 	imprime_first()
 	imprime_follow()
+	#########################
 
+
+####### EXECUTE PROGRAM ######
 main()

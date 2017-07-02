@@ -3,4 +3,9 @@ class Estado:
         self.nome = ""
         self.first = []
         self.follow = []
-        self.tem_epsilon = False
+
+    def tem_epsilon():
+        if 'ε' in self.first:
+            return True
+        else:
+            return False
