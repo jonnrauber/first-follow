@@ -6,6 +6,7 @@ Estados = []
 has_changed = True
 pos_estado = None
 pos_estado_atual = None
+all_have_eps = True
 ######################
 
 ################### PRINT FUNCTIONS #######################
@@ -73,7 +74,7 @@ def search_pos_estado(estado):
 
 #Retorna True se terminou de ler a produção e Falso se precisa continuar lendo
 def read_production_first(line):
-	global i_line, Estados, has_changed, pos_estado_atual, pos_estado
+	global i_line, Estados, has_changed, pos_estado_atual, pos_estado, all_have_eps
 	if line[i_line] != '<' and line[i_line] != '>':
 		#If production's first symbol is Terminal,
 		#verifies if it already exists in state's first set.
@@ -81,20 +82,26 @@ def read_production_first(line):
 			Estados[pos_estado_atual].first.append(line[i_line])
 			has_changed = True
 		i_line += 1
+		all_have_eps = False
 		return True
 	else:
 		#If production's first symbol is NonTerminal,
 		#copy the first set corresponding to it into current state.
 		estado = splitNT(line)
-		if exists_estado(estado) and estado != Estados[pos_estado_atual].nome:
+		if exists_estado(estado):
 			pos_estado = search_pos_estado(estado)
-			for i in Estados[pos_estado].first:
-				if i not in Estados[pos_estado_atual].first and i != 'ε':
-					Estados[pos_estado_atual].first.append(i)
-					has_changed = True
-			if not Estados[pos_estado].tem_epsilon:
-				return True
+			if Estados[pos_estado].tem_epsilon:
+				all_have_eps = True
+			if estado != Estados[pos_estado_atual].nome:
+				for i in Estados[pos_estado].first:
+					if i not in Estados[pos_estado_atual].first and i != 'ε':
+						Estados[pos_estado_atual].first.append(i)
+						has_changed = True
+				if not Estados[pos_estado].tem_epsilon:
+					all_have_eps = False
+					return True
 		else:
+			all_have_eps = False
 			return True
 		i_line += 1
 		return False
@@ -103,7 +110,7 @@ def read_production_first(line):
 #Receives a line from the external file and executes the verification of
 #the First Set Algorithm.
 def read_line_first(line):
-	global i_line, has_changed, Estados, pos_estado, pos_estado_atual
+	global i_line, has_changed, Estados, pos_estado, pos_estado_atual, all_have_eps
 	i_line = 1
 	estado = splitNT(line)
 	if exists_estado(estado):
@@ -120,10 +127,12 @@ def read_line_first(line):
 
 	while line[i_line] != '\n':
 		while line[i_line] != ' ' and line[i_line] != '\n':
+			all_have_eps = True
 			if read_production_first(line) == True:
+				if 'ε' not in Estados[pos_estado_atual].first and all_have_eps:
+					Estados[pos_estado_atual].first.append('ε')
 				break
-			# if line[i_line] == ' ' or line[i_line] == '\n':
-			# 	Estados[pos_estado_atual].first.append('ε')
+
 		while line[i_line] != '|':
 			if line[i_line] == '\n': return #Current line is over, end function
 			i_line += 1
