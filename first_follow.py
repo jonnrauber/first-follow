@@ -86,6 +86,8 @@ def read_production_first(line):
 					has_changed = True
 			if not Estados[pos_estado].tem_epsilon:
 				return True
+		else:
+			return True
 		i_line += 1
 		return False
 
