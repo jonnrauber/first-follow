@@ -4,6 +4,8 @@ from Estado import *
 i_line = 1
 Estados = []
 has_changed = True
+pos_estado = None
+pos_estado_atual = None
 ######################
 
 #Print the first sets
@@ -36,6 +38,8 @@ def imprime_follow():
 def splitNT(line):
 	global i_line
 	NT = "" #NonTerminal symbol
+	if line[i_line] == '<':
+		i_line += 1
 	while line[i_line] != '>':
 		NT = NT + line[i_line]
 		i_line += 1
@@ -57,10 +61,39 @@ def search_pos_estado(estado):
 			return i
 
 
+#Retorna True se terminou de ler a produção e Falso se precisa continuar lendo
+def read_production_first(line):
+	global i_line, Estados, has_changed, pos_estado_atual, pos_estado
+	if line[i_line] != '<' and line[i_line] != '>':
+		#If production's first symbol is Terminal,
+		#verifies if it already exists in state's first set.
+		if line[i_line] == 'ε':
+			Estados[pos_estado_atual].tem_epsilon = True
+		if line[i_line] != 'ε' and line[i_line] not in Estados[pos_estado_atual].first:
+			Estados[pos_estado_atual].first.append(line[i_line])
+			has_changed = True
+		i_line += 1
+		return True
+	else:
+		#If production's first symbol is NonTerminal,
+		#copy the first set corresponding to it into current state.
+		estado = splitNT(line)
+		if exists_estado(estado) and estado != Estados[pos_estado_atual].nome:
+			pos_estado = search_pos_estado(estado)
+			for i in Estados[pos_estado].first:
+				if i not in Estados[pos_estado_atual].first:
+					Estados[pos_estado_atual].first.append(i)
+					has_changed = True
+			if not Estados[pos_estado].tem_epsilon:
+				return True
+		i_line += 1
+		return False
+
+
 #Receives a line from the external file and executes the verification of
 #the First Set Algorithm.
 def read_line_first(line):
-	global i_line, has_changed, Estados
+	global i_line, has_changed, Estados, pos_estado, pos_estado_atual
 	i_line = 1
 	estado = splitNT(line)
 	if exists_estado(estado):
@@ -76,30 +109,12 @@ def read_line_first(line):
 		i_line += 1
 
 	while line[i_line] != '\n':
-		if line[i_line] != '<':
-			#If production's first symbol is Terminal,
-			#verifies if it already exists in state's first set.
-			if line[i_line] == 'ε':
-				Estados[pos_estado_atual].tem_epsilon = True
-			if line[i_line] != 'ε' and line[i_line] not in Estados[pos_estado_atual].first:
-				Estados[pos_estado_atual].first.append(line[i_line])
-				has_changed = True
-			i_line += 1
-		else:
-			#If production's first symbol is NonTerminal,
-			#copy the first set corresponding to it into current state.
-			i_line += 1
-			estado = splitNT(line)
-			if exists_estado(estado) and estado != Estados[pos_estado_atual].nome:
-				pos_estado = search_pos_estado(estado)
-				for i in Estados[pos_estado].first:
-					if i not in Estados[pos_estado_atual].first:
-						Estados[pos_estado_atual].first.append(i)
-						has_changed = True
+		while line[i_line] != ' ' and line[i_line] != '\n':
+			if read_production_first(line) == True:
+				break
 
 		while line[i_line] != '|':
-			if line[i_line] == '\n':
-				return #Current line is over, end function
+			if line[i_line] == '\n': return #Current line is over, end function
 			i_line += 1
 		i_line += 1
 		while line[i_line] == ' ':
