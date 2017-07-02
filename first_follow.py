@@ -1,76 +1,130 @@
+from Estado import *
 
-
-class Estado:
-	nome = ""
-	firsts = []
-
-i_linha = 1
+###GLOBAL VARIABLES###
+i_line = 1
 Estados = []
-flagg = ""
+has_changed = True
+######################
 
-def splitNT (linha):
-	global i_linha
-	NT = ""
+#Print the first sets
+def imprime_first():
+	global Estados
+	print("CONJUNTOS FIRST")
+	for estado in Estados:
+		print(estado.nome + " -> {", end="")
+		for i in range(0, len(estado.first)):
+			if i:
+				print(", ", end="")
+			print(estado.first[i], end="")
+		print("}")
 
-	while linha[i_linha] != '>':
-		NT = NT + linha[i_linha]
-		i_linha += 1
+
+#Print the follow sets
+def imprime_follow():
+	global Estados
+	print("CONJUNTOS FOLLOW")
+	for estado in Estados:
+		print(estado.nome + " -> {", end="")
+		for i in range(0, len(estado.follow)):
+			if i:
+				print(", ", end="")
+			print(estado.follow[i], end="")
+		print("}")
+
+
+#Splits a string between '<' and '>' characters to obtain the NonTerminal Symbol
+def splitNT(line):
+	global i_line
+	NT = "" #NonTerminal symbol
+	while line[i_line] != '>':
+		NT = NT + line[i_line]
+		i_line += 1
 	return NT
 
-def Resolvefirst():
-	global i_linha, Estados, flagg
-	#abre o arquivo em modo de leitura
-	with open("entrada.txt", "r") as arquivo:
-		for linha in arquivo:
-			flag = 0;
-			if (linha[len(linha)-1] != '\n'):
-				linha = linha + '\n'
-			
-			estado = splitNT(linha)
-			for i in Estados:
-				if estado == i.nome:
-					flag = 1;
-			
-			if flag == 0:
-				Est = Estado()
-				Est.nome = estado
-				Estados.append(Est)
-			
-			while linha[i_linha] != ':':
-				i_linha += 1
-			i_linha += 3 #pula o simbolo da atribuição ::=
-			while linha[i_linha] == ' ':
-				i_linha += 1
-			
-			while linha[i_linha] != '\n':
-				if linha[i_linha] != '<':
-					flagg = 1
-					Estados[len(Estados)-1].firsts.append(linha[i_linha])
-					
-				else:
-					i_linha += 1
-					estado = splitNT(linha)
-					
-					for i in Estados:
-						if i.nome == estado:
-							for j in i.firsts:
-								flagg = 1
-								Estados[len(Estados)-1].firsts.append(j)
-				while linha[i_linha] != '|':
-					if linha[i_linha] == '\n':
-						break
-					i_linha += 1
-					print(linha[i_linha])
-				
-				if linha[i_linha] == '|':
-					print("ola")
-					while linha[i_linha] != ' ':
-						i_linha += 1			
-			i_linha = 1
 
+#Verifies if a determinated state exists in the list of states (Estados)
+def exists_estado(estado):
+	for i in Estados:
+		if estado == i.nome:
+			return True
+	return False
+
+
+#Search the position of a state in the list (Estados)
+def search_pos_estado(estado):
+	for i in range(0, len(Estados)):
+		if Estados[i].nome == estado:
+			return i
+
+
+#Receives a line from the external file and executes the verification of
+#the First Set Algorithm.
+def read_line_first(line):
+	global i_line, has_changed, Estados
+	i_line = 1
+	estado = splitNT(line)
+	if exists_estado(estado):
+		pos_estado_atual = search_pos_estado(estado)
+	else:
+		Est = Estado()
+		Est.nome = estado
+		Estados.append(Est)
+		pos_estado_atual = len(Estados)-1
+
+	while (line[i_line] == ' ' or line[i_line] == '>' or line[i_line] == ':'
+			or line[i_line] == '='):
+		i_line += 1
+
+	while line[i_line] != '\n':
+		if line[i_line] != '<':
+			#If production's first symbol is Terminal,
+			#verifies if it already exists in state's first set.
+			if line[i_line] == 'ε':
+				Estados[pos_estado_atual].tem_epsilon = True
+			if line[i_line] != 'ε' and line[i_line] not in Estados[pos_estado_atual].first:
+				Estados[pos_estado_atual].first.append(line[i_line])
+				has_changed = True
+			i_line += 1
+		else:
+			#If production's first symbol is NonTerminal,
+			#copy the first set corresponding to it into current state.
+			i_line += 1
+			estado = splitNT(line)
+			if exists_estado(estado) and estado != Estados[pos_estado_atual].nome:
+				pos_estado = search_pos_estado(estado)
+				for i in Estados[pos_estado].first:
+					if i not in Estados[pos_estado_atual].first:
+						Estados[pos_estado_atual].first.append(i)
+						has_changed = True
+
+		while line[i_line] != '|':
+			if line[i_line] == '\n':
+				return #Current line is over, end function
+			i_line += 1
+		i_line += 1
+		while line[i_line] == ' ':
+			i_line += 1
+
+
+#Everytime flagg is set, it means some first set has changed in last iteration;
+#so, the function reopen the file and iterate over it again.
+def resolve_first():
+	global i_line, Estados, has_changed
+	#open file in read mode
+	has_changed = False;
+	with open("GLC.txt", "r") as File:
+		for line in File:
+			read_line_first(line)
+
+
+#Main Function
 def main():
-	global Estados,flagg
-	flagg = 0
-	while flagg == 0:	
-		Resolvefirst()
+	global Estados, has_changed
+	has_changed = True
+	while has_changed:
+		resolve_first()
+
+	imprime_first()
+	imprime_follow()
+
 main()
