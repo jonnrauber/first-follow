@@ -161,23 +161,89 @@ def first_substring(line, a, b):
 
 
 
-#Receives a line from the external file and executes the verification of
-#the Follow Set Algorithm.
+#Receives a line from the external file and executes the verification of the first part of the Follow Set algorithm.
 def read_line_follow(line):
 	global i_line, Estados, has_changed
 	i_line = 1
 	estado = splitNT(line)
-
 	while (line[i_line] == ' ' or line[i_line] == '>' or line[i_line] == ':'
 			or line[i_line] == '='):
 		i_line += 1
+	
+	while line[i_line] != '\n':
+		if line[i_line] == '<':
+			i_line += 1
+			est = splitNT(line)
+			i_line += 1
+			
+			if line[i_line] == '<':
+				i_line += 1
+				est2 = splitNT(line)
+				for i in Estados:
+					if i.nome == est2:
+						for j in Estados:
+							if j.nome == est:
+								for k in i.first:
+									if k not in j.follow and k != 'ε':
+										j.follow.append(k)
+				i_line -= 1
+				while line[i_line] != '<':
+					i_line -= 1
+				i_line -= 1
+			else:
+				if(line[i_line] != '\n'):
+					for i in Estados:
+						if i.nome == est:
+							if line[i_line] not in i.follow and line[i_line] != 'ε':
+								i.follow.append(line[i_line])				
+		if line[i_line] != '\n':
+			i_line += 1
 
 
+#Receives a line from the external file and executes the verification of the second part of the Follow Set algorithm.
+def read_line_follow2(line):
+	global i_line, Estados, has_changed, all_have_eps
+	all_have_eps = True
+	fim_producao = False
+	i_line = 1
+	estado = splitNT(line)
+	while (line[i_line] == ' ' or line[i_line] == '>' or line[i_line] == ':'
+			or line[i_line] == '='):
+		i_line += 1
+	
+	while line[i_line] != '\n':
+		i_line += 1
+	
+	while line[i_line] == '\n' or line[i_line] == ' ':
+		i_line -= 1
+	
+			
+	if line[i_line] == '>':
+		while all_have_eps == True and fim_producao == False:
+			while line[i_line] != '<':
+				if(line[i_line] == '='):
+					fim_producao = True
+					break
+				i_line -= 1
+			i_line += 1
+			est = splitNT(line)
+			for i in Estados:
+				if i.nome == estado:
+					for j in Estados:
+						if j.nome == est:
+							if 'ε' in j.first:
+								all_have_eps = True
+							else:
+								all_have_eps = False
+							for k in i.follow:
+								if k not in j.follow:
+									has_changed = True
+									j.follow.append(k)
+			while line[i_line] != '<':
+				i_line -= 1
+			i_line -= 1
 
-
-
-#Everytime has_changed is set, it means some follow set has changed in last iteration;
-#so, the function reopen the file and iterate over it again.
+#the function open the file and iterate over it.
 def resolve_follow():
 	global i_line, Estados, has_changed
 	#open file in read mode
@@ -185,6 +251,17 @@ def resolve_follow():
 	with open("GLC.txt", "r") as File:
 		for line in File:
 			read_line_follow(line)
+
+
+#Everytime has_changed is set, it means some follow set has changed in last iteration;
+#so, the function reopen the file and iterate over it again.
+def resolve_follow2():
+	global i_line, Estados, has_changed
+	#open file in read mode
+	has_changed = False;
+	with open("GLC.txt", "r") as File:
+		for line in File:
+			read_line_follow2(line)
 
 
 #Put the "Dollar Sign" ($) in the initial state's follow set.
@@ -208,10 +285,11 @@ def main():
 	##################
 
 	##### FOLLOW #####
-	has_changed = True
 	put_dollar_sign()
+	resolve_follow()
+	has_changed = True
 	while has_changed:
-		resolve_follow()
+		resolve_follow2()
 	##################
 
 	##### PRINT RESULTS #####
