@@ -79,7 +79,7 @@ def read_production_first(line):
 		#verifies if it already exists in state's first set.
 		if line[i_line] not in Estados[pos_estado_atual].first:
 			Estados[pos_estado_atual].first.append(line[i_line])
-			print("First(" + Estados[pos_estado_atual].nome + ") <- " + line[i_line])
+			#print("First(" + Estados[pos_estado_atual].nome + ") <- " + line[i_line])
 			has_changed = True
 		i_line += 1
 		return True
@@ -87,14 +87,13 @@ def read_production_first(line):
 		#If production's first symbol is NonTerminal,
 		#copy the first set corresponding to it into current state.
 		estado = splitNT(line)
-		print(estado)
 		if exists_estado(estado):
 			pos_estado = search_pos_estado(estado)
 			if estado != Estados[pos_estado_atual].nome:
 				for i in Estados[pos_estado].first:
 					if i not in Estados[pos_estado_atual].first and i != 'ε':
 						Estados[pos_estado_atual].first.append(i)
-						print("First(" + Estados[pos_estado_atual].nome + ") <- " + i)
+						#print("First(" + Estados[pos_estado_atual].nome + ") <- " + i)
 						has_changed = True
 				if 'ε' not in Estados[pos_estado].first:
 					return True
@@ -170,6 +169,9 @@ def read_line_follow(line):
 		i_line += 1
 	
 	while line[i_line] != '\n':
+		while line[i_line] == '|' or line[i_line] == ' ':
+			i_line += 1
+			
 		if line[i_line] == '<':
 			i_line += 1
 			est = splitNT(line)
@@ -193,7 +195,7 @@ def read_line_follow(line):
 				if(line[i_line] != '\n'):
 					for i in Estados:
 						if i.nome == est:
-							if line[i_line] not in i.follow and line[i_line] != 'ε':
+							if line[i_line] not in i.follow and line[i_line] != 'ε' and line[i_line] != ' ':
 								i.follow.append(line[i_line])				
 		if line[i_line] != '\n':
 			i_line += 1
@@ -211,36 +213,40 @@ def read_line_follow2(line):
 		i_line += 1
 	
 	while line[i_line] != '\n':
-		i_line += 1
-	
-	while line[i_line] == '\n' or line[i_line] == ' ':
-		i_line -= 1
-	
-			
-	if line[i_line] == '>':
-		while all_have_eps == True and fim_producao == False:
-			while line[i_line] != '<':
-				if(line[i_line] == '='):
-					fim_producao = True
-					break
-				i_line -= 1
+		while line[i_line] != '|' and line[i_line] != '\n':
 			i_line += 1
-			est = splitNT(line)
-			for i in Estados:
-				if i.nome == estado:
-					for j in Estados:
-						if j.nome == est:
-							if 'ε' in j.first:
-								all_have_eps = True
-							else:
-								all_have_eps = False
-							for k in i.follow:
-								if k not in j.follow:
-									has_changed = True
-									j.follow.append(k)
-			while line[i_line] != '<':
-				i_line -= 1
+		while line[i_line] == '\n' or line[i_line] == ' ' or line[i_line] == '|':
 			i_line -= 1
+		all_have_eps = True
+		fim_producao = False
+		if line[i_line] == '>':
+			while all_have_eps == True and fim_producao == False:
+				while line[i_line] != '<':
+					if(line[i_line] == '=' or line[i_line] == '|'):
+						fim_producao = True
+						break
+					i_line -= 1
+				i_line += 1
+				est = splitNT(line)
+				for i in Estados:
+					if i.nome == estado:
+						for j in Estados:
+							if j.nome == est:
+								if 'ε' in j.first:
+									all_have_eps = True
+								else:
+									all_have_eps = False
+								for k in i.follow:
+									if k not in j.follow:
+										has_changed = True
+										j.follow.append(k)
+				while line[i_line] != '<':
+					i_line -= 1
+				i_line -= 1
+		while line[i_line] != '\n' and line[i_line] != '|':
+			i_line += 1
+		if line[i_line] == '|':
+			i_line += 1
 
 #the function open the file and iterate over it.
 def resolve_follow():
