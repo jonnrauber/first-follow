@@ -6,6 +6,7 @@ Estados = []
 has_changed = True
 pos_estado = None
 pos_estado_atual = None
+all_have_eps = True
 ######################
 
 ################### PRINT FUNCTIONS #######################
@@ -89,15 +90,12 @@ def read_production_first(line):
 		estado = splitNT(line)
 		if exists_estado(estado):
 			pos_estado = search_pos_estado(estado)
-			if estado != Estados[pos_estado_atual].nome:
-				for i in Estados[pos_estado].first:
-					if i not in Estados[pos_estado_atual].first and i != 'ε':
-						Estados[pos_estado_atual].first.append(i)
-						#print("First(" + Estados[pos_estado_atual].nome + ") <- " + i)
-						has_changed = True
-				if 'ε' not in Estados[pos_estado].first:
-					return True
-			else:
+			for i in Estados[pos_estado].first:
+				if i not in Estados[pos_estado_atual].first and i != 'ε':
+					Estados[pos_estado_atual].first.append(i)
+					#print("First(" + Estados[pos_estado_atual].nome + ") <- " + i)
+					has_changed = True
+			if 'ε' not in Estados[pos_estado].first:
 				return True
 		else:
 			return True
@@ -152,13 +150,6 @@ def resolve_first():
 
 ################# FUNCTIONS TO FIND FOLLOW SETS ######################
 
-#Receives a line and two indexes a & b.
-#Returns the FIRST set of the interval [a,b]
-def first_substring(line, a, b):
-	FIRST = {}
-
-
-
 #Receives a line from the external file and executes the verification of the first part of the Follow Set algorithm.
 def read_line_follow(line):
 	global i_line, Estados, has_changed
@@ -167,16 +158,16 @@ def read_line_follow(line):
 	while (line[i_line] == ' ' or line[i_line] == '>' or line[i_line] == ':'
 			or line[i_line] == '='):
 		i_line += 1
-	
+
 	while line[i_line] != '\n':
 		while line[i_line] == '|' or line[i_line] == ' ':
 			i_line += 1
-			
+
 		if line[i_line] == '<':
 			i_line += 1
 			est = splitNT(line)
 			i_line += 1
-			
+
 			if line[i_line] == '<':
 				i_line += 1
 				est2 = splitNT(line)
@@ -196,7 +187,7 @@ def read_line_follow(line):
 					for i in Estados:
 						if i.nome == est:
 							if line[i_line] not in i.follow and line[i_line] != 'ε' and line[i_line] != ' ':
-								i.follow.append(line[i_line])				
+								i.follow.append(line[i_line])
 		if line[i_line] != '\n':
 			i_line += 1
 
@@ -211,7 +202,7 @@ def read_line_follow2(line):
 	while (line[i_line] == ' ' or line[i_line] == '>' or line[i_line] == ':'
 			or line[i_line] == '='):
 		i_line += 1
-	
+
 	while line[i_line] != '\n':
 		while line[i_line] != '|' and line[i_line] != '\n':
 			i_line += 1
